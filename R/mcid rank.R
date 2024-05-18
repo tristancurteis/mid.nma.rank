@@ -144,7 +144,7 @@ posterior_ranks_mid <- function(x,
       rk <- mid_based_ranks(d, mid = mid, dim_d = dim_d,
                              dimnames_d = dimnames_d, lower_better = lower_better)
 
-    }else if(mid=0){                 #If ranking not based on mid
+    }else if(mid==0){                 #If ranking not based on mid
 
       # Get ranks at each iteration
       rk <- aperm(apply(d, 1:2, rank, ties.method = "average"),
@@ -207,7 +207,7 @@ posterior_ranks_mid <- function(x,
 
         rk[ , , (i - 1)*ntrt + 1:ntrt] <- mid_based_ranks(temp_d, mid = mid, dim_d = dim_temp_d, dimnames_d = dimnames_temp_d, lower_better = lower_better)
 
-      }else if(mid = 0){                 #If ranking not based on mid
+      }else if(mid == 0){                 #If ranking not based on mid
 
         # Get ranks at each iteration
         rk[ , , (i - 1)*ntrt + 1:ntrt] <-
@@ -382,7 +382,7 @@ mid_based_ranks <- function(x, mid, dim_d, dimnames_d, lower_better){
 
     nsup[,,i]  <-  apply(test[,,], 1:2, sum)    #Calculate number of mid superiorities for trt i
 
-    #Note if mid = 0, and decision rule includes = sign, then require next line (only for case mid=0)
+    #Note if mid = 0, and decision rule includes = sign, then require next line (only for case mid==0)
     #nsup[,,i]  <-  apply(test[,,], 1:2, sum) - test[,,i]
 
   }

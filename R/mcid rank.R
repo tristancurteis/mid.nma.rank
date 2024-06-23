@@ -302,6 +302,21 @@ posterior_rank_probs_mid <- function(x,
     p_rank <- tibble::as_tibble(p_rank, rownames = "parameter") %>%
       tibble::add_column(.trt = x$network$treatments, .before = 1)
 
+    #Calculate p best or equal, i.e. lowest rank (not necessarily 1st)
+    min_rank <- apply(rk$sims, 1:2, min)  #lowest rank for each iteration
+    min_cond <- array(NA_real_, dim = dim(rk$sims), dimnames = dimnames(rk$sims))
+
+    for(i in 1:dim(rk$sims)[1]){ #for each iteration
+
+      for(j in 1:dim(rk$sims)[2]){ # for each chain
+
+        min_cond[i,j,] <- 1*(rk$sims[i,j,] == min_rank[i,j])
+
+      }
+    }
+
+    p_rank$p_mid_best <- apply(min_cond, 3, mean) #probability within an MID of lowest rank
+
     if (sucra) p_rank$sucra <- unname(sucras)
 
     out <- list(summary = p_rank)

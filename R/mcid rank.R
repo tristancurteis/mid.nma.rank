@@ -144,7 +144,7 @@ posterior_ranks_mid <- function(x,
       rk <- mid_based_ranks(d, mid = mid, dim_d = dim_d,
                              dimnames_d = dimnames_d, lower_better = lower_better)
 
-    }else if(mid==0){                 #If ranking not based on mid
+    }else if(mid==0){                 #If ranking not based on mid (no ties possible)
 
       # Get ranks at each iteration
       rk <- aperm(apply(d, 1:2, rank, ties.method = "average"),
@@ -302,6 +302,7 @@ posterior_rank_probs_mid <- function(x,
     p_rank <- tibble::as_tibble(p_rank, rownames = "parameter") %>%
       tibble::add_column(.trt = x$network$treatments, .before = 1)
 
+
     #Calculate p best or equal, i.e. lowest rank (not necessarily 1st)
     min_rank <- apply(rk$sims, 1:2, min)  #lowest rank for each iteration
     min_cond <- array(NA_real_, dim = dim(rk$sims), dimnames = dimnames(rk$sims))
@@ -315,13 +316,13 @@ posterior_rank_probs_mid <- function(x,
       }
     }
 
-    p_rank$p_mid_best <- apply(min_cond, 3, mean) #probability within an MID of lowest rank
+    p_rank$p_lowest <- apply(min_cond, 3, mean) #probability lowest rank
 
     if (sucra) p_rank$sucra <- unname(sucras)
 
     out <- list(summary = p_rank)
 
-  } else { # Study-specific treatment effects
+  } else { # Study-specific treatment effects  #TCu: require calculation of p_best
 
     nstudy <- nrow(studies)
 
@@ -374,6 +375,7 @@ mid_based_ranks <- function(x, mid, dim_d, dimnames_d, lower_better){
   #Intermediary storage for mid ranking calculations
   test <- array(NA_real_, dim = dim_d, dimnames = dimnames_d)
   nsup <- array(NA_real_, dim = dim_d, dimnames = dimnames_d)
+  ninf <- array(NA_real_, dim = dim_d, dimnames = dimnames_d)
 
   #Sequential calculations to reduce memory burden
 
@@ -383,30 +385,33 @@ mid_based_ranks <- function(x, mid, dim_d, dimnames_d, lower_better){
 
 
       if (!lower_better){
-        test[,,j] <- 1*(x[,,i] - x[,,j] - mid > 0)     # If positive orientation, test whether trt i is mid superior to trt j
+        test[,,j] <- 1*(x[,,i] - x[,,j] - mid >= 0)     # If positive orientation, test whether trt i is mid superior to trt j
         # Test difference from mid in mean difference, assuming higher mean diff is better; Events are good => +ve xi-xj and xi-xj-delta>0, means i more effective than j
       }
 
       if (lower_better){
-        test[,,j] <- 1*(x[,,j] - x[,,i] - mid > 0)     #If negative orientation, test whether trt i is mid superior to trt j
+        test[,,j] <- 1*(x[,,j] - x[,,i] - mid >= 0)     #If negative orientation, test whether trt i is mid superior to trt j
         # Test difference from mid in mean difference, assuming lower mean diff is better; Events are bad =>  -ve xi-xj and -(xi-xj)-delta>=0 means j more effective than i
       }
 
 
     }
 
-    nsup[,,i]  <-  apply(test[,,], 1:2, sum)    #Calculate number of mid superiorities for trt i
+      #Calculate number of mid superiorities for trt i
 
-    #Note if mid = 0, and decision rule includes = sign, then require next line (only for case mid==0)
-    #nsup[,,i]  <-  apply(test[,,], 1:2, sum) - test[,,i]
+      nsup[,,i]  <- apply(test[,,], 1:2, sum) - test[,,i]  #Subtract comparison vs itself (this final term test[,,i] is always zero unless mid=0)
 
-  }
+    }
 
-  #Get ranks at each iteration
-  rk <- aperm(apply(nsup, 1:2, rank, ties.method = "average"),
-              c("iterations", "chains", "parameters"))
+    #rank based on the number of (non-self) equal or inferior treatments
+    rk_min <- aperm(apply((dim_d[3] - 1) - nsup, 1:2, rank, ties.method = "min"),
+                      c("iterations", "chains", "parameters"))
+    rk_max <- aperm(apply((dim_d[3] - 1) - nsup, 1:2, rank, ties.method = "max"),
+                      c("iterations", "chains", "parameters"))
+    rk_ave <- aperm(apply((dim_d[3] - 1) - nsup, 1:2, rank, ties.method = "average"),
+                      c("iterations", "chains", "parameters"))
 
-  rk <- dim_d[3] + 1 - rk    #since based on number of superiorities
+    rk <- rk_ave  #take average approach
 
   return(rk)
 

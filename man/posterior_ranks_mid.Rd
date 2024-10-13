@@ -13,7 +13,8 @@ posterior_ranks_mid(
   probs = c(0.025, 0.25, 0.5, 0.75, 0.975),
   sucra = FALSE,
   summary = TRUE,
-  mid = NULL
+  mid = 0,
+  method = "midpoint"
 )
 
 posterior_rank_probs_mid(
@@ -23,7 +24,8 @@ posterior_rank_probs_mid(
   lower_better = TRUE,
   cumulative = FALSE,
   sucra = FALSE,
-  mid = NULL
+  mid = NULL,
+  method = "midpoint"
 )
 }
 \arguments{
@@ -49,7 +51,8 @@ curve (SUCRA) for each treatment? Default `FALSE`.}
 
 \item{summary}{Logical, calculate posterior summaries? Default `TRUE`.}
 
-\item{mid}{Numeric, account for minimally important difference? Default of NULL, i.e. no minimally important difference.}
+\item{mid}{Numeric, a positive value, account for minimally important difference?
+Default of 0, i.e. no minimally important difference.}
 
 \item{cumulative}{Logical, return cumulative rank probabilities? Default is
 `FALSE`, return posterior probabilities of each treatment having a given
@@ -63,7 +66,9 @@ A [nma_summary] object if `summary = TRUE`, otherwise a list
 }
 \description{
 Produce posterior treatment rankings and rank probabilities from a fitted NMA
-model. Specify a minimally important difference (MID) specific to the outcome and its scale to require ranking to be based on an MID. When a meta-regression is fitted with effect modifier interactions
+model. Specify a minimally important difference (MID) specific to the outcome
+and its scale to require ranking to be based on an MID.
+When a meta-regression is fitted with effect modifier interactions
 with treatment, posterior ranks will differ by study population.
 }
 \details{
@@ -82,6 +87,45 @@ The function `posterior_ranks_mid()` produces posterior rankings, which
   negative binary outcome lower (more negative) log odds ratios are
   preferred, so `lower_better = TRUE`. Conversely, for example, if treatments
   aim to increase the rate of a positive outcome then `lower_better = FALSE`.
+
+  @examples
+  # example code
+
+  library(multinma)
+  library(mid.rank.nma)
+
+  #load data
+  data(Senn2013)
+  head(Senn2013)
+
+  Senn2013$se[Senn2013$study == "Willms1999"][2] <- 0.4 #Impute standard error for reference arm
+
+  #prepare network
+  diabetes_net <- set_agd_contrast(Senn2013,
+                                study = study,
+                                trt = trt,
+                                y = y,
+                                se = se,
+                                trt_ref = "Placebo")
+
+  #fit model
+  diabetes_fit_FE <- nma(diabetes_net,
+                      trt_effects = "fixed",
+                      prior_intercept = normal(scale = 100),
+                      prior_trt = normal(scale = 100))
+
+
+
+  # With minimally important difference
+  mid <- 0.5
+
+  rank_mid <- posterior_ranks_mid(diabetes_fit_FE, summary = TRUE, sucra = TRUE, mid = mid)
+  rank_probs_mid <- posterior_rank_probs_mid(diabetes_fit_FE, mid = mid)
+  rank_probs_cum_mid <- posterior_rank_probs_mid(diabetes_fit_FE, cumulative = T, mid = mid)
+
+  plot(rank_mid)
+  plot(rank_probs_mid)
+  plot(rank_probs_cum_mid)
 }
 \seealso{
 [plot.nma_summary()] for plotting the ranks and rank probabilities.

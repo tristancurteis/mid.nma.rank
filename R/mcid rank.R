@@ -98,7 +98,8 @@ posterior_ranks_mid <- function(x,
                             probs = c(0.025, 0.25, 0.5, 0.75, 0.975),
                             sucra = FALSE,
                             summary = TRUE,
-                            mid = 0) {
+                            mid = 0,
+                            method = "midpoint") {
   # Checks
   if (!rlang::is_bool(lower_better))
     abort("`lower_better` should be TRUE or FALSE.")
@@ -111,6 +112,12 @@ posterior_ranks_mid <- function(x,
 
   if (!is.numeric(mid))
     abort("`mid` should be numeric.")
+
+  if (!method %in% c("midpoint", "min", "max"))
+    abort("parameter method must be one of: \"midpoint\", \"min\", or \"max\".")
+
+  if (!is.null(study))
+    abort("MID Ranking not yet available with study-specific effects. Only use this function for standard NMA not for ML-NMR.")
 
   check_probs(probs)
 
@@ -142,7 +149,7 @@ posterior_ranks_mid <- function(x,
     if (mid > 0) {    #If ranking based on mid
 
       rk <- mid_based_ranks(d, mid = mid, dim_d = dim_d,
-                             dimnames_d = dimnames_d, lower_better = lower_better)
+                             dimnames_d = dimnames_d, lower_better = lower_better, method = method)
 
     }else if(mid==0){                 #If ranking not based on mid (no ties possible)
 
@@ -268,7 +275,8 @@ posterior_rank_probs_mid <- function(x,
                                  lower_better = TRUE,
                                  cumulative = FALSE,
                                  sucra = FALSE,
-                                 mid = NULL) {
+                                 mid = NULL,
+                                 method = "midpoint") {
   # Checks
   if (!rlang::is_bool(cumulative))
     abort("`cumulative` should be TRUE or FALSE.")
@@ -281,7 +289,8 @@ posterior_rank_probs_mid <- function(x,
 
   # All other checks handled by posterior_ranks_mid()
   rk <- posterior_ranks_mid(x = x, newdata = newdata, study = {{ study }},
-                        lower_better = lower_better, summary = FALSE, mid = mid)
+                        lower_better = lower_better, summary = FALSE, mid = mid,
+                        method = method)
 
   ntrt <- nlevels(x$network$treatments)
   studies <- rk$studies
@@ -316,7 +325,7 @@ posterior_rank_probs_mid <- function(x,
       }
     }
 
-    p_rank$p_lowest <- apply(min_cond, 3, mean) #probability lowest rank
+    p_rank$p_best_or_equal <- apply(min_cond, 3, mean) #probability best or equal best
 
     if (sucra) p_rank$sucra <- unname(sucras)
 
@@ -368,7 +377,7 @@ posterior_rank_probs_mid <- function(x,
 
 #' Calculate mcid adjusted ranks
 #' @noRd
-mid_based_ranks <- function(x, mid, dim_d, dimnames_d, lower_better){
+mid_based_ranks <- function(x, mid, dim_d, dimnames_d, lower_better, method){
 
   if (!is.array(x) || length(dim(x)) != 3) abort("Error in mid_based_ranks: First parameter is not a 3D MCMC array, [Iterations, Chains, Parameters]")
 
@@ -411,7 +420,15 @@ mid_based_ranks <- function(x, mid, dim_d, dimnames_d, lower_better){
     rk_ave <- aperm(apply((dim_d[3] - 1) - nsup, 1:2, rank, ties.method = "average"),
                       c("iterations", "chains", "parameters"))
 
+    if(method == "midpoint"){
     rk <- rk_ave  #take average approach
+    }
+    if(method == "min"){
+      rk <- rk_min  #take minimum approach
+    }
+    if(method == "max"){
+      rk <- rk_max  #take maximum approach
+    }
 
   return(rk)
 

@@ -7,4 +7,6 @@ PLEASE NOTE:
 
 
 
-Please find associated manuscript materials within the folder 'Manuscript'.
+Please find associated manuscript materials within the folder:
+
+Curteis T, Wigle A, Michaels CJ, Nikolakopoulou A. Ranking of treatments in network meta-analysis: incorporating minimally important differences. BMC Med Res Methodol. 2025 Mar 10;25(1):67. doi: 10.1186/s12874-025-02499-0. PMID: 40065217; PMCID: PMC11892231.

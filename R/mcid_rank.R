@@ -673,6 +673,7 @@ posterior_ranks_mid <- function(x,
 
 #' Calculate mid adjusted ranks
 #' @noRd
+#' @keywords internal
 mid_based_ranks <- function(x, mid, dim_d, dimnames_d, lower_better, method){
 
   if (!is.array(x) || length(dim(x)) != 3) abort("Error in mid_based_ranks: First parameter is not a 3D MCMC array, [Iterations, Chains, Parameters]")
@@ -731,7 +732,7 @@ mid_based_ranks <- function(x, mid, dim_d, dimnames_d, lower_better, method){
 }
 
 ####summary mcmc array function ####
-
+#' @keywords internal
 summary_mcmc_array <- function(x, probs = c(0.025, 0.25, 0.5, 0.75, 0.975)) {
   if (!is.array(x) || length(dim(x)) != 3) abort("Not a 3D MCMC array, [Iterations, Chains, Parameters]")
   check_probs(probs)
@@ -764,6 +765,7 @@ summary_mcmc_array <- function(x, probs = c(0.025, 0.25, 0.5, 0.75, 0.975)) {
 
 #' Validate probs argument
 #' @noRd
+#' @keywords internal
 check_probs <- function(probs) {
   if (!rlang::is_double(probs, finite = TRUE) || any(probs < 0) || any(probs > 1))
     rlang::abort("`probs` must be a numeric vector of probabilities between 0 and 1.")

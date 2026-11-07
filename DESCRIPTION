@@ -5,7 +5,7 @@ Version: 0.1.0
 Author: person("Tristan", "Curteis", email = "tristan.curteis@costellomedical.com",
   role = c("aut", "cre"))
 Maintainer: The package maintainer <tristan.curteis@costellomedical.com>
-Description: An extension of package multinma to adjust for minimally important differences when ranking treatments. Refer to methods implemented in the following article:
+Description: An extension of package multinma to adjust for minimally important differences when ranking treatments. Refer to methods implemented in the following article: Curteis T, Wigle A, Michaels CJ, Nikolakopoulou A. Ranking of treatments in network meta-analysis: incorporating minimally important differences. BMC Med Res Methodol. 2025 Mar 10;25(1):67. doi: 10.1186/s12874-025-02499-0. PMID: 40065217; PMCID: PMC11892231.
 License: GPL (>= 3)
 Encoding: UTF-8
 LazyData: true

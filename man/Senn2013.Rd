@@ -5,12 +5,12 @@
 \alias{Senn2013}
 \title{Network meta-analysis in diabetes}
 \format{
-A data frame of 53 rows with and following 4 columns:
-\tabular{rl}{
-\bold{\emph{y}}\tab Mean difference versus placebo in HbA1c (%) \cr
-\bold{\emph{se}}\tab Standard error of mean difference \cr
-\bold{\emph{trt}}\tab Treatment \cr
-\bold{\emph{study}}\tab Study name
+A data frame with 53 rows and 4 variables:
+\describe{
+  \item{y}{Mean difference versus placebo in HbA1c (\%)}
+  \item{se}{Standard error of mean difference}
+  \item{trt}{Treatment}
+  \item{study}{Study name}
 }
 }
 \usage{

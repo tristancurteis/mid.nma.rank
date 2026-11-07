@@ -1,16 +1,11 @@
 #' Plaque psoriasis aggregate-level data
 #'
-#' Two data frames, plaque_psoriasis_ipd and plaque_psoriasis_agd, containing (simulated) individual patient data from four studies and aggregate data from five studies (Phillippo 2019). Outcomes are binary success/failure to achieve 75%, 90%, or 100% reduction in symptoms on the Psoriasis Area and Severity Index (PASI) scale.
+#' Aggregate data from five studies
+#' (Phillippo, 2019).
 #'
 #' @docType data
 #'
-#' @usage
-#'
-#' data(plaque_psoriasis_ipd)
-#'
-#' data(plaque_psoriasis_agd))
-#'
-#' @format The individual patient data are contained in a data frame plaque_psoriasis_ipd with 4118 rows, one per individual, and 16 variables:
+#' @format A data frame with 15 rows and 26 variables:
 #' \describe{
 #'   \item{studyc}{study name}
 #'   \item{trtc_long}{treatment name (long format)}
@@ -40,5 +35,8 @@
 #'   \item{psa}{percentage of individuals with psoriatic arthritis}
 #' }
 #'
-#' @source ...
+#' @references
+#' Phillippo DM (2019). Calibration of Treatment Effects in Network
+#' Meta-Analysis using Individual Patient Data. PhD thesis,
+#' University of Bristol.
 "plaque_psoriasis_agd"

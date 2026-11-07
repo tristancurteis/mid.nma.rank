@@ -2,10 +2,10 @@
 #' Treatment rankings and rank probabilities
 #'
 #' The below code allows for the correct production of plots of MID-adjusted probability jth and cumulative probability jth
-#' Refer to manuscript code for example usage. 
+#' Refer to manuscript code for example usage.
 #' plot.nma_rank_probs below is to replace the equivalent version in multinma, if MID-adjusted plots are required.
-
-#' @rdname plot.nma_summary
+#'
+#' @name plot.nma_rank_probs
 #' @export
 plot.nma_rank_probs <- function(x, ...) {
   # Get axis labels from attributes, if available

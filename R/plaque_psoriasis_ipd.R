@@ -1,0 +1,32 @@
+#' Plaque psoriasis individual patient data
+#'
+#' Simulated individual patient data from four studies
+#' (Phillippo, 2019).
+#'
+#' @docType data
+#'
+#' @format A data frame with 4118 rows and 16 variables:
+#' \describe{
+#'   \item{studyc}{study name}
+#'   \item{trtc_long}{treatment name (long format)}
+#'   \item{trtc}{treatment name}
+#'   \item{trtn}{numeric treatment code}
+#'   \item{pasi75}{binary PASI 75 outcome}
+#'   \item{pasi90}{binary PASI 90 outcome}
+#'   \item{pasi100}{binary PASI 100 outcome}
+#'   \item{age}{age (years)}
+#'   \item{bmi}{body mass index (BMI)}
+#'   \item{pasi_w0}{PASI score at week 0}
+#'   \item{male}{male sex (TRUE or FALSE)}
+#'   \item{bsa}{body surface area (percent)}
+#'   \item{weight}{weight (kilograms)}
+#'   \item{durnpso}{duration of psoriasis (years)}
+#'   \item{prevsys}{previous systemic treatment (TRUE or FALSE)}
+#'   \item{psa}{psoriatic arthritis (TRUE or FALSE)}
+#' }
+#'
+#' @references
+#' Phillippo DM (2019). Calibration of Treatment Effects in Network
+#' Meta-Analysis using Individual Patient Data. PhD thesis,
+#' University of Bristol.
+"plaque_psoriasis_ipd"

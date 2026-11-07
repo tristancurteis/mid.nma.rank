@@ -584,8 +584,6 @@ posterior_ranks_mid <- function(x,
 
   } else { # Study-specific treatment effects   ###TCu: updates 08/07/2025
 
-      #TCu (2026-05-13): Carla to QC from here to end of function (line 191)
-      #Carla, the function mid_based_ranks (line 150) has been QCed as part of the standard NMA output (i.e. where it features on line 80)
     nstudy <- nrow(studies)
 
     d <- rel_eff$sim
@@ -666,7 +664,10 @@ posterior_ranks_mid <- function(x,
     attr(out, "ylab") <- "Posterior Rank"
   }
   return(out)
-}####mid based ranks ranks function ####
+}
+
+
+####mid based ranks ranks function ####
 
 
 #' @param d Array of relative treatment effects as defined above, based on relative_effects
@@ -733,6 +734,7 @@ mid_based_ranks <- function(x, mid, dim_d, dimnames_d, lower_better, method){
 
 ####summary mcmc array function ####
 #' @keywords internal
+#' @noRd
 summary_mcmc_array <- function(x, probs = c(0.025, 0.25, 0.5, 0.75, 0.975)) {
   if (!is.array(x) || length(dim(x)) != 3) abort("Not a 3D MCMC array, [Iterations, Chains, Parameters]")
   check_probs(probs)

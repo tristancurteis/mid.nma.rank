@@ -487,26 +487,26 @@ posterior_ranks_mid <- function(x,
   return(out)
 }
 
-
-
-
 ####posterior rank probs function ####
 
-posterior_ranks_mid <- function(x,
-                                newdata = NULL,
-                                study = NULL,
-                                lower_better = TRUE,
-                                probs = c(0.025, 0.25, 0.5, 0.75, 0.975),
-                                sucra = FALSE,
-                                summary = TRUE,
-                                mid = 0,
-                                method = "midpoint") {
-  # Checks
-  if (!rlang::is_bool(lower_better))
-    abort("`lower_better` should be TRUE or FALSE.")
+#' @param cumulative Logical, return cumulative rank probabilities? Default is
+#'   `FALSE`, return posterior probabilities of each treatment having a given
+#'   rank. If `TRUE`, cumulative posterior rank probabilities are returned for
+#'   each treatment having a given rank or better.
+#' @export
+#' @rdname posterior_ranks_mid
 
-  if (!rlang::is_bool(summary))
-    abort("`summary` should be TRUE or FALSE.")
+posterior_rank_probs_mid <- function(x,
+                                     newdata = NULL,
+                                     study = NULL,
+                                     lower_better = TRUE,
+                                     cumulative = FALSE,
+                                     sucra = FALSE,
+                                     mid = NULL,
+                                     method = "midpoint") {
+  # Checks
+  if (!rlang::is_bool(cumulative))
+    abort("`cumulative` should be TRUE or FALSE.")
 
   if (!rlang::is_bool(sucra))
     abort("`sucra` should be TRUE or FALSE.")
@@ -514,157 +514,115 @@ posterior_ranks_mid <- function(x,
   if (!is.numeric(mid))
     abort("`mid` should be numeric.")
 
-  if (!method %in% c("midpoint", "min", "max"))
-    abort("parameter method must be one of: \"midpoint\", \"min\", or \"max\".")
-
-  check_probs(probs)
-
-  # Cannot produce relative effects for inconsistency models
-  if (x$consistency != "consistency")
-    abort(glue::glue("Cannot produce ranks under inconsistency '{x$consistency}' model."))
-
-  # Get reference treatment, number of treatments
-  trt_ref <- levels(x$network$treatments)[1]
-  ntrt <- nlevels(x$network$treatments)
-
-  # All other checks handled by relative_effects()
-  rel_eff <- relative_effects(x = x, newdata = newdata, study = {{ study }},
-                              all_contrasts = FALSE, summary = FALSE)
-
-  studies <- rel_eff$studies
-
-  if (is.null(studies)) { # No study-specific treatment effects
-    # Add zeros for d[1]
-    dim_d <- dim(rel_eff$sim)
-    dim_d[3] <- dim_d[3] + 1
-    dimnames_d <- dimnames(rel_eff$sim)
-    dimnames_d[[3]] <- c(paste0("d[", trt_ref, "]"), dimnames_d[[3]])
-    d <- array(NA_real_, dim = dim_d, dimnames = dimnames_d)
-    d[ , , 1] <- 0
-    d[ , , 2:ntrt] <- rel_eff$sim
-
-    # Calculate ranks
-    if (mid > 0) {    #If ranking based on mid
-
-      rk <- mid_based_ranks(d, mid = mid,
-                            dim_d = dim_d,
-                            dimnames_d = dimnames_d,
+  # All other checks handled by posterior_ranks_mid()
+  rk <- posterior_ranks_mid(x = x, newdata = newdata, study = {{ study }},
                             lower_better = lower_better,
+                            summary = FALSE, mid = mid,
                             method = method)
 
-    }else if(mid==0){                 #If ranking not based on mid (no ties possible)
+  ntrt <- nlevels(x$network$treatments)
+  studies <- rk$studies
 
-      # Get ranks at each iteration
-      rk <- aperm(apply(d, 1:2, rank, ties.method = "average"),
-                  c("iterations", "chains", "parameters"))
+  if (is.null(studies)) { # No study-specific treatment effects
 
-      # If higher treatment effects are better
-      if (!lower_better) rk <- ntrt + 1 - rk
+    p_rank <- apply(apply(rk$sims, 1:3, `==`, seq(1,ntrt, 0.5)), c(4, 1), mean)
+    if (cumulative) p_rank <- t(apply(p_rank, 1, cumsum))
 
+    if (sucra) {
+      if (cumulative) sucras <- rowMeans(p_rank[, -ntrt, drop = FALSE])
+      else sucras <- rowMeans(t(apply(p_rank, 1, cumsum))[, -ntrt, drop = FALSE])
     }
 
-    # Rename parameters
-    dimnames(rk)[[3]] <- paste0("rank[", levels(x$network$treatments), "]")
+    rownames(p_rank) <- stringr::str_replace(rownames(p_rank), "^rank\\[", "d\\[")
+    colnames(p_rank) <- paste0("p_rank[", seq(1,ntrt, 0.5), "]")
 
-    # Get summaries
-    if (summary) {
-      rk_summary <- summary_mcmc_array(rk, probs = probs) %>%
-        tibble::add_column(.trt = x$network$treatments, .before = 1)
+    p_rank <- tibble::as_tibble(p_rank, rownames = "parameter") %>%
+      tibble::add_column(.trt = x$network$treatments, .before = 1)
 
-      if (sucra) {
-        # Calculate SUCRA using scaled mean rank relation of Rucker and Schwarzer (2015)
-        sucras <- unname((ntrt - rk_summary$mean) / (ntrt - 1))
-        rk_summary <- tibble::add_column(rk_summary, sucra = sucras, .after = "sd")
+
+    #Calculate p best or equal, i.e. lowest rank (not necessarily 1st)
+    min_rank <- apply(rk$sims, 1:2, min)  #lowest rank for each iteration
+    min_cond <- array(NA_real_, dim = dim(rk$sims), dimnames = dimnames(rk$sims))
+
+    for(i in 1:dim(rk$sims)[1]){ #for each iteration
+
+      for(j in 1:dim(rk$sims)[2]){ # for each chain
+
+        min_cond[i,j,] <- 1*(rk$sims[i,j,] == min_rank[i,j])
+
       }
-
-      out <- list(summary = rk_summary, sims = rk)
-    } else {
-      out <- list(sims = rk)
     }
 
-  } else { # Study-specific treatment effects   ###TCu: updates 08/07/2025
+    p_rank$p_best_or_equal <- apply(min_cond, 3, mean) #probability best or equal best
+
+    if (sucra) p_rank$sucra <- unname(sucras)
+
+    out <- list(summary = p_rank)
+
+  } else { # Study-specific treatment effects  #TCu: require calculation of p_best
+
 
     nstudy <- nrow(studies)
 
-    d <- rel_eff$sim
-    d_names <- dimnames(d)[[3]]
-
-    # Calculate ranks within each study population
-    dim_rk <- dim(d)
-    dim_rk[3] <- dim_rk[3] + nstudy
-    rk_names <- vector("character", dim_rk[[3]])
-    dimnames_rk <- dimnames(d)
-    dimnames_rk[[3]] <- rk_names
-    rk <- array(NA_real_, dim = dim_rk, dimnames = dimnames_rk)
-
-    dim_temp_d <- dim(d)
-    dim_temp_d[[3]] <- ntrt
-    dimnames_temp_d <- dimnames(d)
-    dimnames_temp_d[[3]] <- paste0("d[", levels(x$network$treatments), "]")
-    temp_d <- array(NA_real_, dim = dim_temp_d, dimnames = dimnames_temp_d)
-    temp_d[ , , 1] <- 0
-
+    p_rank <- matrix(NA_real_, nrow = ntrt * nstudy, ncol = length(seq(1, ntrt, 0.5)))
+    rk_sims <- rk$sims
     for (i in seq_len(nstudy)) {
-      rk_names[(i - 1)*ntrt + 1:ntrt] <-
-        c(paste0("d[", studies$.study[i], ": ", trt_ref, "]"),
-          d_names[(i - 1)*(ntrt - 1) + 1:(ntrt - 1)])
+      p_rank[(i - 1)*ntrt + 1:ntrt, ] <-
+        apply(apply(rk_sims[ , , (i - 1)*ntrt + 1:ntrt], 1:3, `==`, seq(1, ntrt, 0.5)), c(4, 1), mean)
+    }
 
-      temp_d[ , , 2:ntrt] <- d[ , , (i - 1)*(ntrt - 1) + 1:(ntrt - 1)]
+    if (cumulative) p_rank <- t(apply(p_rank, 1, cumsum))
 
-      # Calculate ranks
-      if (mid > 0) {  #If ranking based on mid
+    if (sucra) {
+      if (cumulative) sucras <- rowMeans(p_rank[, -ntrt, drop = FALSE])
+      else sucras <- rowMeans(t(apply(p_rank, 1, cumsum))[, -ntrt, drop = FALSE])
+    }
 
-        rk[ , , (i - 1)*ntrt + 1:ntrt] <- mid_based_ranks(temp_d,
-                                                          mid = mid,
-                                                          dim_d = dim_temp_d,
-                                                          dimnames_d = dimnames_temp_d,
-                                                          lower_better = lower_better,
-                                                          method = method)
+    rownames(p_rank) <- stringr::str_replace(dimnames(rk_sims)[[3]], "^rank\\[", "d\\[")
+    colnames(p_rank) <- paste0("p_rank[", seq(1, ntrt, 0.5), "]")
 
-      }else if(mid == 0){                 #If ranking not based on mid
+    p_rank <- tibble::as_tibble(p_rank, rownames = "parameter") %>%
+      # Add in study info
+      tibble::add_column(.study = rep(studies$.study, each = ntrt),
+                         .trt = rep(x$network$treatments, times = nstudy),
+                         .before = 1)
 
-        # Get ranks at each iteration
-        rk[ , , (i - 1)*ntrt + 1:ntrt] <-
-          aperm(apply(temp_d, 1:2, rank, ties.method = "average"),
-                c("iterations", "chains", "parameters"))
 
-        # If higher treatment effects are better
-        if (!lower_better) rk <- ntrt + 1 - rk
+    #Calculate p best or equal, i.e. lowest rank (not necessarily 1st)
+    min_cond <- array(NA_real_, dim = dim(rk$sims), dimnames = dimnames(rk$sims))
+    p_rank$p_best_or_equal <- NA
+
+    for (s in seq_len(nstudy)) { #for each study-specific set of ranks
+
+      min_rank <- apply(rk$sims[,,(s - 1)*ntrt + 1:ntrt], 1:2, min)  #lowest rank for each iteration
+
+      for(i in 1:dim(rk$sims)[1]){ #for each iteration
+
+        for(j in 1:dim(rk$sims)[2]){ # for each chain
+
+
+          min_cond[i,j,(s - 1)*ntrt + 1:ntrt] <- 1*(rk$sims[i,j,(s - 1)*ntrt + 1:ntrt] == min_rank[i,j])
+
+        }
       }
+      #For each study
+      p_rank$p_best_or_equal[(s - 1)*ntrt + 1:ntrt] <- apply(min_cond[,,(s - 1)*ntrt + 1:ntrt], 3, mean) #probability best or equal best
 
     }
 
 
-    # Rename parameters
-    dimnames(rk)[[3]] <- gsub("^d\\[", "rank\\[", rk_names)
+    if (sucra) p_rank$sucra <- unname(sucras)
 
-    # Get summaries
-    if (summary) {
-      rk_summary <- summary_mcmc_array(rk, probs = probs) %>%
-        # Add in study info
-        tibble::add_column(.study = rep(studies$.study, each = ntrt),
-                           .trt = rep(x$network$treatments, times = nstudy),
-                           .before = 1)
+    out <- list(summary = p_rank, studies = studies)
 
-      if (sucra) {
-        # Calculate SUCRA using scaled mean rank relation of Rucker and Schwarzer (2015)
-        sucras <- unname((ntrt - rk_summary$mean) / (ntrt - 1))
-        rk_summary <- tibble::add_column(rk_summary, sucra = sucras, .after = "sd")
-      }
-
-      out <- list(summary = rk_summary, sims = rk, studies = studies)
-    } else {
-      out <- list(sims = rk, studies = studies)
-    }
   }
 
-  if (summary) {
-    class(out) <- c("nma_ranks", "nma_summary")
-    attr(out, "xlab") <- "Treatment"
-    attr(out, "ylab") <- "Posterior Rank"
-  }
+  class(out) <- c("nma_rank_probs", "nma_summary")
+  attr(out, "xlab") <- "Rank"
+  attr(out, "ylab") <- if (cumulative) "Cumulative Rank Probability" else "Rank Probability"
   return(out)
 }
+
 
 
 ####mid based ranks ranks function ####

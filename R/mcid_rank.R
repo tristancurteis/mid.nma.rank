@@ -1,6 +1,3 @@
-rm(list = ls())
-
-
 #' Treatment rankings and rank probabilities
 #'
 #' Produce posterior treatment rankings and rank probabilities from a fitted NMA or ML-NMR
@@ -24,7 +21,7 @@ rm(list = ls())
 #' @param summary Logical, calculate posterior summaries? Default `TRUE`.
 #' @param sucra Logical, calculate the surface under the cumulative ranking
 #'   curve (SUCRA) for each treatment? Default `FALSE`.
-#' @param mid Numeric, a positive value, account for minimally important difference?
+#' @param mid Numeric, Specify as positive (greater than zero) to account for minimally important difference
 #' Default of 0, i.e. no minimally important difference.
 #' @param method Character, method to use for ranking when accounting for minimally important difference. Options are "midpoint" (default - and strongly recommended), "min", or "max". See details.
 #'
@@ -498,7 +495,7 @@ posterior_rank_probs_mid <- function(x,
                                      lower_better = TRUE,
                                      cumulative = FALSE,
                                      sucra = FALSE,
-                                     mid = NULL,
+                                     mid = 0,
                                      method = "midpoint") {
   # Checks
   if (!rlang::is_bool(cumulative))

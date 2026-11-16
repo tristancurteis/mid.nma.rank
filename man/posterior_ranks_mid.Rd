@@ -2,6 +2,7 @@
 % Please edit documentation in R/mcid_rank.R
 \name{posterior_ranks_mid}
 \alias{posterior_ranks_mid}
+\alias{posterior_rank_probs_mid}
 \title{Treatment rankings and rank probabilities}
 \usage{
 posterior_ranks_mid(
@@ -13,6 +14,17 @@ posterior_ranks_mid(
   sucra = FALSE,
   summary = TRUE,
   mid = 0,
+  method = "midpoint"
+)
+
+posterior_rank_probs_mid(
+  x,
+  newdata = NULL,
+  study = NULL,
+  lower_better = TRUE,
+  cumulative = FALSE,
+  sucra = FALSE,
+  mid = NULL,
   method = "midpoint"
 )
 }
@@ -43,6 +55,11 @@ curve (SUCRA) for each treatment? Default `FALSE`.}
 Default of 0, i.e. no minimally important difference.}
 
 \item{method}{Character, method to use for ranking when accounting for minimally important difference. Options are "midpoint" (default - and strongly recommended), "min", or "max". See details.}
+
+\item{cumulative}{Logical, return cumulative rank probabilities? Default is
+`FALSE`, return posterior probabilities of each treatment having a given
+rank. If `TRUE`, cumulative posterior rank probabilities are returned for
+each treatment having a given rank or better.}
 }
 \value{
 A [nma_summary] object if `summary = TRUE`, otherwise a list
@@ -74,9 +91,9 @@ The function `posterior_ranks_mid()` produces posterior rankings, which
   aim to increase the rate of a positive outcome then `lower_better = FALSE`.
 
   The argument `method` specifies how to handle ties in ranking. Method 'midpoint' is default and is strongly reccomended to align methodology with Curteis et al. 2025. See Curteis et al, 2025 Ranking of treatments in network meta-analysis: incorporating minimally important differences. for full details.
-
-  @examples
-  1. example code for application in NMA
+}
+\examples{
+  1. Example code for application in NMA
 
   library(multinma)
   library(mid.rank.nma)
@@ -115,7 +132,7 @@ The function `posterior_ranks_mid()` produces posterior rankings, which
   plot(rank_probs_cum_mid)
 
 
-  2. example code for application in ML-NMR
+  2. Example code for application in ML-NMR
 
   library(multinma)
   library(mid.rank.nma)
@@ -128,7 +145,7 @@ pso_agd <- plaque_psoriasis_agd
 
 
 # IPD studies
-pso_ipd <- plaque_psoriasis_ipd %>%
+pso_ipd <- plaque_psoriasis_ipd \%>\%
   mutate(
     # Variable transformations
     bsa = bsa / 100,
@@ -138,16 +155,16 @@ pso_ipd <- plaque_psoriasis_ipd %>%
     psa = as.numeric(psa),
     # Treatment classes
     trtclass = case_when(trtn == 1 ~ "Placebo",
-                         trtn %in% c(2, 3, 5, 6) ~ "IL-17 blocker",
+                         trtn \%in\% c(2, 3, 5, 6) ~ "IL-17 blocker",
                          trtn == 4 ~ "TNFa blocker",
                          trtn == 7 ~ "IL-12/23 blocker"),
     # Check complete cases for covariates of interest
     is_complete = complete.cases(durnpso, prevsys, bsa, weight, psa)
-  ) %>%
+  ) \%>\%
   arrange(studyc, trtn)
 
 # AgD studies
-pso_agd <- plaque_psoriasis_agd %>%
+pso_agd <- plaque_psoriasis_agd \%>\%
   mutate(
     # Variable transformations
     bsa_mean = bsa_mean / 100,
@@ -160,15 +177,15 @@ pso_agd <- plaque_psoriasis_agd %>%
     psa = psa / 100,
     # Treatment classes
     trtclass = case_when(trtn == 1 ~ "Placebo",
-                         trtn %in% c(2, 3, 5, 6) ~ "IL-17 blocker",
+                         trtn \%in\% c(2, 3, 5, 6) ~ "IL-17 blocker",
                          trtn == 4 ~ "TNFa blocker",
                          trtn == 7 ~ "IL-12/23 blocker")
-  ) %>%
+  ) \%>\%
   arrange(studyc, trtn)
 
 
-pso_ipd %>%
-  group_by(studyc) %>%
+pso_ipd \%>\%
+  group_by(studyc) \%>\%
   summarise(n_total = n(),
             n_missing = sum(!is_complete),
             pct_missing = mean(!is_complete) * 100)
@@ -254,12 +271,12 @@ forest_OR <- plot(pso_or_FE, ref_line = c(0, 1))
 pso_agd$avg_pasi75perc <- pso_agd$pasi75_r/pso_agd$pasi75_n
 mean(pso_agd$avg_pasi75perc)
 
-#For aggregate studies, the average pasi75 rate for placebo arms is 3%
+#For aggregate studies, the average pasi75 rate for placebo arms is 3\%
 avg_pasi75_trn1 <- mean(pso_agd$pasi75_r[pso_agd$trtn == 1]/pso_agd$pasi75_n[pso_agd$trtn == 1], na.rm = TRUE)
 avg_pasi75_trn1
 #probit scale
 
-# midRD <- 0.1                #%10 MID on risk difference scale
+# midRD <- 0.1                #\%10 MID on risk difference scale
 # p1 <- 0.5 #mean(pso_agd$avg_pasi75perc) #avg_pasi75_trn1       # baseline probability
 # p2 <- p1 + midRD            # 10 percentage-point increase from baseline probability
 # delta_eta <- qnorm(p2) - qnorm(p1)
@@ -280,14 +297,14 @@ uniq_combinations
 #Research question:
 #https://academic.oup.com/bjd/article/177/4/1014/6674120?login=false
 #IXORA-S
-#Assumed PASI 90% response rate of 43% for ustekinumab
+#Assumed PASI 90\% response rate of 43\% for ustekinumab
 #12.6 risk difference
 
-#How does IXE_Q2W rank if we require a 12.6% risk difference to establish superior ranking?
+#How does IXE_Q2W rank if we require a 12.6\% risk difference to establish superior ranking?
 
 #with baseline probability as well
 p1 <- 0.43      # baseline probability
-dp <- 0.126     # 10% absolute risk difference
+dp <- 0.126     # 10\% absolute risk difference
 p2 <- p1 + dp
 logit <- function(p) log(p / (1 - p))
 delta_logit <- logit(p2) - logit(p1)
@@ -317,12 +334,12 @@ rank_mid <- posterior_ranks_mid(pso_fit_FE, summary = TRUE, sucra = TRUE, mid = 
 rank_probs_mid <- posterior_rank_probs_mid(pso_fit_FE, mid = mid, lower_better = FALSE)
 rank_probs_cum_mid <- posterior_rank_probs_mid(pso_fit_FE, cumulative = T, mid = mid, lower_better = FALSE)
 
-# rank_mid$summary %>%
+# rank_mid$summary \%>\%
 #   filter(.study == "IXORA-S")
 #
 # #select parameter column of rank_probs_mid$summary and filter for IXORA-S study
-# rank_probs_mid$summary %>%
-#   filter(.study == "IXORA-S") %>% select(parameter)
+# rank_probs_mid$summary \%>\%
+#   filter(.study == "IXORA-S") \%>\% select(parameter)
 
 
 rank_mid_plot <- plot(rank_mid)

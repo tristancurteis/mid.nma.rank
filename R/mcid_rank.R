@@ -53,8 +53,8 @@ rm(list = ls())
 #'
 #'   The argument `method` specifies how to handle ties in ranking. Method 'midpoint' is default and is strongly reccomended to align methodology with Curteis et al. 2025. See Curteis et al, 2025 Ranking of treatments in network meta-analysis: incorporating minimally important differences. for full details.
 #'
-#'   @examples
-#'   1. example code for application in NMA
+#' @examples
+#'   1. Example code for application in NMA
 #'
 #'   library(multinma)
 #'   library(mid.rank.nma)
@@ -93,7 +93,7 @@ rm(list = ls())
 #'   plot(rank_probs_cum_mid)
 #'
 #'
-#'   2. example code for application in ML-NMR
+#'   2. Example code for application in ML-NMR
 #'
 #'   library(multinma)
 #'   library(mid.rank.nma)
@@ -310,9 +310,6 @@ rm(list = ls())
 #' rank_mid_plot
 #' probs_mid
 #' cum_mid
-
-
-
 posterior_ranks_mid <- function(x,
                                 newdata = NULL,
                                 study = NULL,
@@ -495,7 +492,6 @@ posterior_ranks_mid <- function(x,
 #'   each treatment having a given rank or better.
 #' @export
 #' @rdname posterior_ranks_mid
-
 posterior_rank_probs_mid <- function(x,
                                      newdata = NULL,
                                      study = NULL,
@@ -538,7 +534,6 @@ posterior_rank_probs_mid <- function(x,
 
     p_rank <- tibble::as_tibble(p_rank, rownames = "parameter") %>%
       tibble::add_column(.trt = x$network$treatments, .before = 1)
-
 
     #Calculate p best or equal, i.e. lowest rank (not necessarily 1st)
     min_rank <- apply(rk$sims, 1:2, min)  #lowest rank for each iteration

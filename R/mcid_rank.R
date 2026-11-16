@@ -51,7 +51,7 @@
 #'   The argument `method` specifies how to handle ties in ranking. Method 'midpoint' is default and is strongly reccomended to align methodology with Curteis et al. 2025. See Curteis et al, 2025 Ranking of treatments in network meta-analysis: incorporating minimally important differences. for full details.
 #'
 #' @examples
-#'   1. Example code for application in NMA
+#'   #1. Example code for application in NMA
 #'
 #'   library(multinma)
 #'   library(mid.rank.nma)
@@ -90,7 +90,7 @@
 #'   plot(rank_probs_cum_mid)
 #'
 #'
-#'   2. Example code for application in ML-NMR
+#'   #2. Example code for application in ML-NMR
 #'
 #'   library(multinma)
 #'   library(mid.rank.nma)

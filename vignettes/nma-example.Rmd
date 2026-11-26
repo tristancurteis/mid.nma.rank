@@ -2,9 +2,12 @@
 title: "Ranking with MIDs: NMA example"
 output: rmarkdown::html_vignette
 vignette: >
+  %\VignetteEncoding{UTF-8}
   %\VignetteIndexEntry{Ranking with MIDs: NMA example}
   %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}
+editor_options: 
+  markdown: 
+    wrap: 72
 ---
 
 ```{r setup, include = FALSE}
@@ -21,21 +24,29 @@ options(mc.cores = 2)
 
 ## Introduction
 
-This vignette shows how to rank treatments in a standard network meta-analysis
-(NMA) while requiring a minimally important difference (MID) when ranking treatments. 
-The approach follows Curteis et al. (2025), *Ranking of treatments in network meta-analysis: incorporating minimally
-important differences*.
+This vignette shows how to rank treatments in a standard network
+meta-analysis (NMA) while requiring a minimally important difference
+(MID) when ranking treatments. The approach follows Curteis et al.
+(2025), *Ranking of treatments in network meta-analysis: incorporating
+minimally important differences*.
 
-The example uses the `Senn2013` diabetes data supplied with **multinma**. The dataset consists of 26 studies on 10 treatments (including placebo), and the outcome under consideration is the mean difference in change from baseline in mean HbA1c, a measure of blood sugar attached to haemoglobin and an indicator of average blood sugar levels in preceding weeks.
+The example uses the `Senn2013` diabetes data supplied with **multinma**
+which was originally sourced from Senn 2013. The dataset consists of 26
+studies on 10 treatments (including placebo), and the outcome under
+consideration is the mean difference in change from baseline in mean
+HbA1c, a measure of blood sugar attached to haemoglobin and an indicator
+of average blood sugar levels in preceding weeks.
 
 ## Data and network
+
+Each row displays mean differences (y) and associated standard errors (se) in HbA1c for a treatment (trt) compared to a reference treatment in each study (study).
 
 ```{r data}
 data(Senn2013)
 head(Senn2013)
 ```
 
-One reference arm has a missing standard error, which we impute:
+One reference arm in Study Willms 1999 has a missing standard error, which for the purposes of this example we will naively impute with a value of 0.4.
 
 ```{r impute}
 Senn2013$se[Senn2013$study == "Willms1999"][2] <- 0.4
@@ -52,7 +63,7 @@ diabetes_net <- set_agd_contrast(
   se = se,
   trt_ref = "Placebo"
 )
-diabetes_net
+plot(diabetes_net)
 ```
 
 ## Fit the model
@@ -74,9 +85,10 @@ diabetes_fit_FE
 
 ## Choosing the MID
 
-The MID must be on the same scale as the model's treatment effects. Here the
-effects are mean differences in HbA1c (percentage points), so we require a
-difference of at least 0.5 before one treatment is ranked above another.
+The MID must be on the same scale as the model's treatment effects. Here
+the effects are mean differences in HbA1c (percentage points), so we
+require a difference of at least 0.5 before one treatment is ranked
+above another.
 
 ```{r mid}
 mid <- 0.5
@@ -128,13 +140,15 @@ plot(rank_probs_cum_mid)
 
 ## Handling ties
 
-When treatments are not separated by an MID they share a rank. The `method`
-argument controls how tied treatments are ranked:
+When treatments are not separated by an MID they share a rank. The
+`method` argument controls how tied treatments are ranked:
 
-- `"midpoint"` (default, recommended): tied treatments receive the average of
-  the ranks they span, consistent with Curteis et al. (2025).
-- `"min"`: tied treatments receive the best (lowest) rank in the tie.
-- `"max"`: tied treatments receive the worst (highest) rank in the tie.
+-   `"midpoint"` (default, recommended): tied treatments receive the
+    average of the ranks they span, consistent with Curteis et al.
+    (2025).
+-   `"min"`: tied treatments receive the best (lowest) rank in the tie.
+-   `"max"`: tied treatments receive the worst (highest) rank in the
+    tie.
 
 ```{r methods}
 rank_min <- posterior_ranks_mid(diabetes_fit_FE, mid = mid, method = "min")
@@ -143,6 +157,8 @@ rank_max <- posterior_ranks_mid(diabetes_fit_FE, mid = mid, method = "max")
 
 ## References
 
-Curteis T, et al. (2025). Ranking of treatments in network meta-analysis:
-incorporating minimally important differences. *BMC Medical Research
-Methodology*.
+Curteis T, et al. (2025). Ranking of treatments in network
+meta-analysis: incorporating minimally important differences. *BMC
+Medical Research Methodology*.
+
+Senn S, Gavini F, Magrez D, Scheen A. Issues in performing a network meta-analysis. Statistical Methods in Medical Research. 2013 Apr;22(2):169-89.

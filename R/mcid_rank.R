@@ -6,6 +6,11 @@
 #' When a meta-regression is fitted with effect modifier interactions
 #' with treatment, posterior ranks will differ by study population.
 #'
+#' @importFrom rlang abort
+#' @importFrom magrittr %>%
+#' @importFrom stats sd quantile
+#' @importFrom multinma relative_effects
+#'
 #' @param x A `stan_nma` object created by [nma()]
 #' @param newdata Only used if a regression model is fitted. A data frame of
 #'   study details, one row per study, giving the covariate values at which to

@@ -13,7 +13,16 @@ RoxygenNote: 7.3.3
 Depends: 
     R (>= 3.50)
 Imports:
-    rlang,
     glue,
-    tibble,
-    rstan
+    magrittr,
+    multinma,
+    rlang,
+    rstan,
+    stats,
+    stringr,
+    tibble
+Suggests:
+    dplyr,
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr

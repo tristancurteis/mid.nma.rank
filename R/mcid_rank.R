@@ -61,9 +61,9 @@
 #'   mid <- 0.5
 #'
 #'   \donttest{
-#'   rank_mid <- posterior_ranks_mid(pso_fit_FE, summary = TRUE, sucra = TRUE, mid = mid, lower_better = FALSE)
-#'   rank_probs_mid <- posterior_rank_probs_mid(pso_fit_FE, mid = mid, lower_better = FALSE)
-#'   rank_probs_cum_mid <- posterior_rank_probs_mid(pso_fit_FE, cumulative = TRUE, mid = mid, lower_better = FALSE)
+#'   rank_mid <- posterior_ranks_mid(multinma_fit, summary = TRUE, sucra = TRUE, mid = mid, lower_better = FALSE)
+#'   rank_probs_mid <- posterior_rank_probs_mid(multinma_fit, mid = mid, lower_better = FALSE)
+#'   rank_probs_cum_mid <- posterior_rank_probs_mid(multinma_fit, cumulative = TRUE, mid = mid, lower_better = FALSE)
 #'
 #'   plot(rank_mid)
 #'   plot(rank_probs_mid)

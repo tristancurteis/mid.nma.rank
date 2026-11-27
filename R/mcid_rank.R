@@ -1,6 +1,6 @@
 #' Treatment rankings and rank probabilities
 #'
-#' Produce posterior treatment rankings and rank probabilities from a fitted NMA or ML-NMR
+#' Produce posterior treatment rankings from a fitted NMA or ML-NMR
 #' model. Specify a minimally important difference (MID) specific to the outcome
 #' and its scale to require ranking to be based on an MID.
 #' When a meta-regression is fitted with effect modifier interactions
@@ -488,6 +488,14 @@ posterior_ranks_mid <- function(x,
 
 ####posterior rank probs function ####
 
+#' Posterior rank probabilities
+#'
+#' Produce posterior treatment probabilities (cumulative or non-cumulative) from a fitted NMA or ML-NMR
+#' model. Specify a minimally important difference (MID) specific to the outcome
+#' and its scale to require ranking to be based on an MID.
+#' When a meta-regression is fitted with effect modifier interactions
+#' with treatment, posterior ranks will differ by study population.
+#'
 #' @param cumulative Logical, return cumulative rank probabilities? Default is
 #'   `FALSE`, return posterior probabilities of each treatment having a given
 #'   rank. If `TRUE`, cumulative posterior rank probabilities are returned for

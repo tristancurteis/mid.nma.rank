@@ -1,5 +1,5 @@
 
-#' Treatment rankings and rank probabilities
+#' Plot MID-Adjusted (Cumulative) Probabilities
 #'
 #' The below code allows for the correct production of plots of MID-adjusted probability jth and cumulative probability jth
 #' Refer to manuscript code for example usage.

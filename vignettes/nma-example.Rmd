@@ -22,7 +22,7 @@ knitr::opts_chunk$set(
   fig.height = 5
 )
 library(multinma)
-library(mid.rank.nma)
+library(mid.nma.rank)
 options(mc.cores = 2)
 ```
 
@@ -131,7 +131,6 @@ plot(rank_mid)
 ### Rank probabilities
 
 We can also generate the posterior rank probabilities for each treatment, which are the probabilities of each treatment being ranked first, second, third, etc. The plot below shows the rank probabilities for each treatment accounting for the MID. Note that with an MID, it is possible for their to be ties between treatments. In Curteis et al. (2025), the authors recommend using the "midpoint" method for handling ties, which is the default in `posterior_rank_probs_mid()`.[@curteis2025ranking] We therefore see treatments having positive probabilities of being placed in a rank of, for example, 1.5, which is not possible without an MID.
-
 
 ```{r rank-probs}
 rank_probs <- posterior_rank_probs(diabetes_fit_RE) #without mid

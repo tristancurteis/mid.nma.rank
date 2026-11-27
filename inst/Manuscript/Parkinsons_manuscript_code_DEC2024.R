@@ -72,14 +72,12 @@ plot.nma_rank_probs <- function(x, ...) {
   return(p)
 }
 
-#load data
-data(Senn2013, package = "mid.rank.nma")
-head(Senn2013)
 
-#Senn2013$se[Senn2013$study == "Willms1999"][2] <- 0.4 #Impute standard error for reference arm
+#load data
+data(parkinsons)
+head(parkinsons)
 
 options(mc.cores = parallel::detectCores())
-
 
 #======================#
 #####  Directories #####
@@ -88,29 +86,44 @@ options(mc.cores = parallel::detectCores())
 # Directory where the .RProj file is
 w_dir <- find_root(has_file("Manuscript.Rproj"))
 
-res_dir <- paste0(w_dir, "/Results/Senn 2013/")
-res_dir_corrections <- paste0(w_dir, "/Results/Corrections/Senn 2013/")
+res_dir <- paste0(w_dir, "/Results/Parkinsons/")
 
+# #=====================================#
+# #####  Rename Studies and Trts    #####
+# #=====================================#
+#
+# parkinsons$studyn <- paste0("Study ", parkinsons$studyn)
+# parkinsons$trtn <- parkinsons$trtn - 1
+# parkinsons$trtn <- paste0("Treatment ", parkinsons$trtn)
+# parkinsons$trtn <- gsub("Treatment 0", "Placebo", parkinsons$trtn)
+#
+# parkinsons$trtn <- gsub("Treatment 1", "Pramipexole", parkinsons$trtn)
+# parkinsons$trtn <- gsub("Treatment 2", "Ropinirole", parkinsons$trtn)
+# parkinsons$trtn <- gsub("Treatment 3", "Bromocriptine", parkinsons$trtn)
+# parkinsons$trtn <- gsub("Treatment 4", "Cabergoline", parkinsons$trtn)
+#
+# save(parkinsons, file="parkinsons.rda")
 
 #===============================#
 #####  Fit Model            #####
 #===============================#
 
-diabetes_net <- set_agd_contrast(Senn2013,
-                                 study = study,
-                                 trt = trt,
-                                 y = y,
-                                 se = se,
-                                 trt_ref = "Placebo")
+park_net <- set_agd_arm(parkinsons,
+                        study = studyn,
+                        trt = trtn,
+                        y = y,
+                        se = se,
+                        sample_size = n,
+                        trt_ref = "Placebo")
 
-diabetes_fit_FE <- nma(diabetes_net,
+park_fit_FE <- nma(park_net,
                        trt_effects = "fixed",
                        prior_intercept = normal(scale = 1000),
                        prior_trt = normal(scale = 1000),
                        iter = 50000,   #Update to 50000
                        chains = 4)
 
-diabetes_fit_RE <- nma(diabetes_net,
+park_fit_RE <- nma(park_net,
                        trt_effects = "random",
                        prior_intercept = normal(scale = 1000),
                        prior_trt = normal(scale = 1000),
@@ -121,28 +134,27 @@ diabetes_fit_RE <- nma(diabetes_net,
 #####  Model Selection and Densities            #####
 #===================================================#
 
-dic(diabetes_fit_RE)
-dic(diabetes_fit_FE)
+dic(park_fit_FE)
+dic(park_fit_FE)
 
-plot_prior_posterior(diabetes_fit_RE, prior = c("trt", "het"))
-
+#plot_prior_posterior(park_fit_FE, prior = c("trt", "het"))
 
 #===============================#
 #####        Network         #####
 #===============================#
 
-net <- plot(diabetes_net)
+net <- plot(park_net)
 net
 
 #========================================#
 #####     Treatment Effects          #####
 #========================================#
 
-rel_eff <- relative_effects(diabetes_fit_RE, trt_ref = "Placebo")
+rel_eff <- relative_effects(park_fit_FE, trt_ref = "Placebo")
 # rel_eff$summary <- rel_eff$summary[order(rel_eff$summary$mean),]
 # rel_eff$sims <- rel_eff$sims[,,order(rel_eff$summary$mean)]
 
-forest <- plot(rel_eff, ref_line = 0) + labs(x = "Mean Difference Vs Placebo, HbA1c (%)")
+forest <- plot(rel_eff, ref_line = 0) + labs(x = "Mean Difference Vs Placebo In Off-Time (Hours)")
 forest
 
 #===============================#
@@ -150,9 +162,9 @@ forest
 #===============================#
 
 # Without minimally important difference, # With ties.method = minimum
-rank <- posterior_ranks(diabetes_fit_RE, summary = TRUE, sucra = TRUE)
-rank_probs <- posterior_rank_probs(diabetes_fit_RE)
-rank_probs_cum <- posterior_rank_probs(diabetes_fit_RE, cumulative = T)
+rank <- posterior_ranks(park_fit_FE, summary = TRUE, sucra = TRUE)
+rank_probs <- posterior_rank_probs(park_fit_FE)
+rank_probs_cum <- posterior_rank_probs(park_fit_FE, cumulative = TRUE)
 
 rank_0 <- plot(rank)
 probs_0 <- plot(rank_probs)
@@ -161,21 +173,12 @@ cum_0 <- plot(rank_probs_cum)
 rank_0
 
 # With minimally important difference
-mid <- 0.3 # CMi updated to new value
+mid <- 1
 
-rank_mid <- posterior_ranks_mid(diabetes_fit_RE, summary = TRUE, sucra = TRUE, mid = mid)
-rank_probs_mid <- posterior_rank_probs_mid(diabetes_fit_RE, mid = mid)
-rank_probs_cum_mid <- posterior_rank_probs_mid(diabetes_fit_RE, cumulative = T, mid = mid)
+rank_mid <- posterior_ranks_mid(park_fit_FE, summary = TRUE, sucra = TRUE, mid = mid)
+rank_probs_mid <- posterior_rank_probs_mid(park_fit_FE, mid = mid)
+rank_probs_cum_mid <- posterior_rank_probs_mid(park_fit_FE, cumulative = TRUE, mid = mid)
 
-rank_mid_plot <- plot(rank_mid)
-probs_mid <- plot(rank_probs_mid)
-cum_mid <- plot(rank_probs_cum_mid)
-
-rank_mid_plot
-
-p_mid_best <- rank_probs_mid$summary$p_best_or_equal #CMi updated from  rank_probs_mid$summary$p_mid_best as column didn't exist
-
-# Plots
 rank_mid_plot <- plot(rank_mid)
 probs_mid <- plot(rank_probs_mid)
 cum_mid <- plot(rank_probs_cum_mid)
@@ -183,6 +186,8 @@ cum_mid <- plot(rank_probs_cum_mid)
 rank_mid_plot
 probs_mid
 cum_mid
+
+p_mid_best <- rank_probs_mid$summary$p_best_or_equal # CMi: updated column name as originally named column didn't exist
 
 #===============================#
 #####         Table         #####
@@ -204,11 +209,17 @@ rank_table <- cbind(rank$summary$`50%`,
                     digits(rank_probs_mid$summary$`p_rank[1]`,2),
                     digits(p_mid_best,2))
 rank_table <- as.data.frame(rank_table)
+
 colnames(rank_table) <- c("Median Rank", "MID-Median Rank",
                           "SUCRA", "MID-SUCRA",
                           "P Best", "P MID Best", "P MID Equal Best")
 rownames(rank_table) <- rank$summary$.trt
 rank_table
+
+
+
+
+
 
 #===============================#
 #####        Export         #####
@@ -217,76 +228,76 @@ rank_table
 #Export forest plot
 forest
 
-#Export forest plot
-loc <- paste0(res_dir_corrections, "Senn 2013 Forest.png")
+#Export network plot
+loc <- paste0(res_dir, "Parkinsons Forest.png")
 png(loc)
 print(forest)
 dev.off()
 
-loc <- paste0(res_dir_corrections, "Senn 2013 Forest.pdf")
+loc <- paste0(res_dir, "Parkinsons Forest.pdf")
 pdf(loc)
 print(forest)
 dev.off()
 
-loc <- paste0(res_dir_corrections, "Senn 2013 Forest.jpg")
+loc <- paste0(res_dir, "Parkinsons Forest.jpg")
 jpeg(loc)
 print(forest)
 dev.off()
 
 #Export network plot
-loc <- paste0(res_dir_corrections, "Senn 2013 Network.png")
+loc <- paste0(res_dir, "Parkinsons Network.png")
 png(loc)
 print(net)
 dev.off()
 
-loc <- paste0(res_dir_corrections, "Senn 2013 Network.pdf")
+loc <- paste0(res_dir, "Parkinsons Network.pdf")
 pdf(loc)
 print(net)
 dev.off()
 
-loc <- paste0(res_dir_corrections, "Senn 2013 Network.jpg")
+loc <- paste0(res_dir, "Parkinsons Network.jpg")
 jpeg(loc)
 print(net)
 dev.off()
 
 #export ranking plots
-loc <- paste0(res_dir_corrections, "Senn 2013 Median Rank MID = 0.pdf")
+loc <- paste0(res_dir, "Parkinsons Median Rank MID = 1.pdf")
 pdf(loc)
 print(rank_0)
 dev.off()
 
-loc <- paste0(res_dir_corrections, "Senn 2013 Median Rank MID.pdf")
+loc <- paste0(res_dir, "Parkinsons Median Rank MID.pdf")
 pdf(loc)
 print(rank_mid_plot)
 dev.off()
 
-#export probs plots
-loc <- paste0(res_dir_corrections, "Senn 2013 Probs MID.pdf")
+# Probablity jth and cumulative probability jth
+loc <- paste0(res_dir, "Parkinsons Prob jth MID = 1.pdf")
 pdf(loc)
 print(probs_mid)
 dev.off()
 
-loc <- paste0(res_dir_corrections, "Senn 2013 CUM MID.pdf")
+loc <- paste0(res_dir, "Parkinsons Cum Prob jth MID=1.pdf")
 pdf(loc)
 print(cum_mid)
 dev.off()
 
-# loc <- paste0(res_dir, "Senn 2013 Median Prob MID = 0.pdf")
+# loc <- paste0(res_dir, "Parkinsons Median Prob MID = 1.pdf")
 # pdf(loc)
 # print(probs_0)
 # dev.off()
 #
-# loc <- paste0(res_dir, "Senn 2013 Median Prob MID.pdf")
+# loc <- paste0(res_dir, "Parkinsons Median Prob MID.pdf")
 # pdf(loc)
 # print(probs_mid)
 # dev.off()
 #
-# loc <- paste0(res_dir, "Senn 2013 Median Cum MID = 0.pdf")
+# loc <- paste0(res_dir, "Parkinsons Median Cum MID = 1.pdf")
 # pdf(loc)
 # print(cum_0)
 # dev.off()
 #
-# loc <- paste0(res_dir, "Senn 2013 Median Cum MID.pdf")
+# loc <- paste0(res_dir, "Parkinsons Median Cum MID.pdf")
 # pdf(loc)
 # print(cum_mid)
 # dev.off()
@@ -294,7 +305,7 @@ dev.off()
 #export ranking table
 
 filename <- "Ranking Table"                                                                 #File name
-exp_file <- paste0(res_dir_corrections, filename, ".xlsx")    #File path
+exp_file <- paste0(res_dir, filename, ".xlsx")    #File path
 write.xlsx(rank_table, exp_file, overwrite = T, rowNames=T)
 
 

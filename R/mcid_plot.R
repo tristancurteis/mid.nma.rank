@@ -5,9 +5,14 @@
 #' Refer to manuscript code for example usage.
 #' plot.nma_rank_probs below is to replace the equivalent version in multinma, if MID-adjusted plots are required.
 #'
-#' @name plot.nma_rank_probs
+#' @name plot.nma_rank_probs_mid
+#'
+#' @param x An object of class `nma_rank_probs_mid`.
+#' @param ... Additional arguments passed to plotting functions.
+#'
 #' @export
-plot.nma_rank_probs <- function(x, ...) {
+plot.nma_rank_probs_mid <- function(x, ...) {
+
   # Get axis labels from attributes, if available
   p_xlab <- attr(x, "xlab", TRUE)
   if (is.null(p_xlab)) p_xlab <- ""
@@ -30,12 +35,12 @@ plot.nma_rank_probs <- function(x, ...) {
 
   dat <- tidyr::pivot_longer(dat, cols = dplyr::starts_with("p_rank"),
                              names_to = "rank", values_to = "probability")
-  #names_pattern = "^p_rank\\[?\\d+([.]5)?\\]$", #Update from multinma is here
-  #names_transform = list(rank = as.numeric))    #Update from multinma is here
+  #names_pattern = "^p_rank\\[?\\d+([.]5)?\\]$", #Updated code from multinma is here
+  #names_transform = list(rank = as.numeric))    #Updated code from multinma is here
 
-  dat$rank <- gsub("p_rank\\[","", dat$rank)   #Update from multinma is here
-  dat$rank <- gsub("\\]","", dat$rank)         #Update from multinma is here
-  dat$rank <- as.numeric(dat$rank)             #Update from multinma is here
+  dat$rank <- gsub("p_rank\\[","", dat$rank)   #Updated code from multinma is here
+  dat$rank <- gsub("\\]","", dat$rank)         #Updated code from multinma is here
+  dat$rank <- as.numeric(dat$rank)             #Updated code from multinma is here
 
   p <- ggplot2::ggplot(dat,
                        ggplot2::aes(x = .data$rank, y = .data$probability)) +

@@ -67,7 +67,13 @@ A [nma_summary] object if `summary = TRUE`, otherwise a list
   frame of study information.
 }
 \description{
-Produce posterior treatment rankings and rank probabilities from a fitted NMA or ML-NMR
+Produce posterior treatment rankings from a fitted NMA or ML-NMR
+model. Specify a minimally important difference (MID) specific to the outcome
+and its scale to require ranking to be based on an MID.
+When a meta-regression is fitted with effect modifier interactions
+with treatment, posterior ranks will differ by study population.
+
+Produce posterior treatment probabilities (cumulative or non-cumulative) from a fitted NMA or ML-NMR
 model. Specify a minimally important difference (MID) specific to the outcome
 and its scale to require ranking to be based on an MID.
 When a meta-regression is fitted with effect modifier interactions
@@ -96,7 +102,8 @@ The function `posterior_ranks_mid()` produces posterior rankings, which
   #1. Example code for application in NMA
 
   library(multinma)
-  library(mid.rank.nma)
+  library(mid.nma.rank)
+  library(dplyr)
 
   #load data
   data(Senn2013)
@@ -125,7 +132,7 @@ The function `posterior_ranks_mid()` produces posterior rankings, which
 
   rank_mid <- posterior_ranks_mid(diabetes_fit_FE, summary = TRUE, sucra = TRUE, mid = mid)
   rank_probs_mid <- posterior_rank_probs_mid(diabetes_fit_FE, mid = mid)
-  rank_probs_cum_mid <- posterior_rank_probs_mid(diabetes_fit_FE, cumulative = T, mid = mid)
+  rank_probs_cum_mid <- posterior_rank_probs_mid(diabetes_fit_FE, cumulative = TRUE, mid = mid)
 
   plot(rank_mid)
   plot(rank_probs_mid)
@@ -135,7 +142,8 @@ The function `posterior_ranks_mid()` produces posterior rankings, which
   #2. Example code for application in ML-NMR
 
   library(multinma)
-  library(mid.rank.nma)
+  library(mid.nma.rank)
+  library(dplyr)
 
 data(plaque_psoriasis_ipd)
 data(plaque_psoriasis_agd)
@@ -318,7 +326,7 @@ exp(mid) # Corresponds to exceeding all treatments by an OR of:
 # Without minimally important difference, # With ties.method = minimum
 rank <- posterior_ranks(pso_fit_FE, summary = TRUE, sucra = TRUE, lower_better = FALSE)
 rank_probs <- posterior_rank_probs(pso_fit_FE, lower_better = FALSE)
-rank_probs_cum <- posterior_rank_probs(pso_fit_FE, cumulative = T, lower_better = FALSE)
+rank_probs_cum <- posterior_rank_probs(pso_fit_FE, cumulative = TRUE, lower_better = FALSE)
 
 rank_0 <- plot(rank)
 probs_0 <- plot(rank_probs)
@@ -332,7 +340,7 @@ cum_0
 
 rank_mid <- posterior_ranks_mid(pso_fit_FE, summary = TRUE, sucra = TRUE, mid = mid, lower_better = FALSE)
 rank_probs_mid <- posterior_rank_probs_mid(pso_fit_FE, mid = mid, lower_better = FALSE)
-rank_probs_cum_mid <- posterior_rank_probs_mid(pso_fit_FE, cumulative = T, mid = mid, lower_better = FALSE)
+rank_probs_cum_mid <- posterior_rank_probs_mid(pso_fit_FE, cumulative = TRUE, mid = mid, lower_better = FALSE)
 
 # rank_mid$summary \%>\%
 #   filter(.study == "IXORA-S")

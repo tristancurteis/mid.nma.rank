@@ -57,7 +57,7 @@
 #'
 #' @examples
 #'
-#'   # With minimally important difference
+#'   # With example minimally important difference
 #'   mid <- 0.5
 #'
 #'   \donttest{

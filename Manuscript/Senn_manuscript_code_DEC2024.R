@@ -76,7 +76,7 @@ plot.nma_rank_probs <- function(x, ...) {
 data(Senn2013, package = "mid.rank.nma")
 head(Senn2013)
 
-Senn2013$se[Senn2013$study == "Willms1999"][2] <- 0.4 #Impute standard error for reference arm
+#Senn2013$se[Senn2013$study == "Willms1999"][2] <- 0.4 #Impute standard error for reference arm
 
 options(mc.cores = parallel::detectCores())
 

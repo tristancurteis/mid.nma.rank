@@ -1,6 +1,10 @@
 ---
 title: "Ranking with MIDs: NMA example"
 output: rmarkdown::html_vignette
+css: style.css
+bibliography: references.bib
+csl: sage-vancouver.csl
+link-citations: true
 vignette: >
   %\VignetteEncoding{UTF-8}
   %\VignetteIndexEntry{Ranking with MIDs: NMA example}
@@ -26,12 +30,10 @@ options(mc.cores = 2)
 
 This vignette shows how to rank treatments in a standard network
 meta-analysis (NMA) while requiring a minimally important difference
-(MID) when ranking treatments. The approach follows Curteis et al.
-(2025), *Ranking of treatments in network meta-analysis: incorporating
-minimally important differences*.
+(MID) when ranking treatments. The approach follows an example illustration from Curteis et al. (2025).[@curteis2025ranking]
 
 The example uses the `Senn2013` diabetes data supplied with **multinma**
-which was originally sourced from Senn 2013. The dataset consists of 26
+which was originally sourced from Senn et al. (2013)[@senn2013issues] The dataset consists of 26
 studies on 10 treatments (including placebo), and the outcome under
 consideration is the mean difference in change from baseline in mean
 HbA1c, a measure of blood sugar attached to haemoglobin and an indicator
@@ -46,13 +48,13 @@ data(Senn2013)
 head(Senn2013)
 ```
 
-One reference arm in Study Willms 1999 has a missing standard error, which for the purposes of this example we will naively impute with a value of 0.4.
+One reference arm in Study Willms 1999 has a missing standard error, which for the purposes of this example we naively impute with a value of 0.4.
 
 ```{r impute}
 Senn2013$se[Senn2013$study == "Willms1999"][2] <- 0.4
 ```
 
-The network diagram is shown below.
+The network diagram is shown below, with many connections via placebo, and multiple loops within the network.
 
 ```{r network}
 diabetes_net <- set_agd_contrast(
@@ -68,46 +70,53 @@ plot(diabetes_net)
 
 ## Fit the model
 
+Due to the number of studies informing each treatment contrast, the random effects model was preferred over the fixed effects model.
+
 ```{r fit, results = "hide", message = FALSE, warning = FALSE}
-diabetes_fit_FE <- nma(
-  diabetes_net,
-  trt_effects = "fixed",
-  prior_intercept = normal(scale = 100),
-  prior_trt = normal(scale = 100),
-  seed = 123,
-  refresh = 0
-)
+diabetes_fit_RE <- nma(diabetes_net,
+                       trt_effects = "random",
+                       prior_intercept = normal(scale = 1000),
+                       prior_trt = normal(scale = 1000),
+                       iter = 2000,  
+                       chains = 4)
 ```
 
 ```{r fit-summary}
-diabetes_fit_FE
+diabetes_fit_RE
 ```
 
-## Choosing the MID
+## Choosing the Minimally Important Difference (MID)
 
 The MID must be on the same scale as the model's treatment effects. Here
 the effects are mean differences in HbA1c (percentage points), so we
-require a difference of at least 0.5 before one treatment is ranked
-above another.
+require a difference of at least certain difference of percentage points before one treatment is ranked above another. 
+
+A difference between groups of 0.3 in % HbA1c is considered to be clinically meaningful for patients with type 2 diabetes[@ewers2024effects; @schwingshackl2018network;  @look2010long], so we take 0.3 as the MID in this example. 
+
+Importantly, this differs from a minimally important change (MIC; defined as the smallest within-patient change in an outcome measure that is considered important by patients or clinicians) value of 0.5% reported in the literature, which was not used here.
 
 ```{r mid}
-mid <- 0.5
+mid <- 0.3
 ```
+
+It is important to pre-specify the MID and for it to be well motivated by available literature.
 
 ## Rankings without an MID
 
-For comparison, the standard **multinma** rankings:
+For comparison, treatment rankings without incorporation of an MID are displayed below. In particular, the plot below displays the posterior median ranks of each treatment along with 50% and 97.5% credible intervals.
 
 ```{r rank-standard}
-rank_0 <- posterior_ranks(diabetes_fit_FE, sucra = TRUE)
+rank_0 <- posterior_ranks(diabetes_fit_RE, sucra = TRUE)
 plot(rank_0)
 ```
 
 ## Rankings with an MID
 
+We then generate the posterior median ranks of each treatment, accounting for a difference of 0.3 in HbA1c as the MID. Also available are the MID-adjusted mean ranks and MID-adjusted SUCRAs.
+
 ```{r rank-mid}
 rank_mid <- posterior_ranks_mid(
-  diabetes_fit_FE,
+  diabetes_fit_RE,
   summary = TRUE,
   sucra = TRUE,
   mid = mid
@@ -121,44 +130,57 @@ plot(rank_mid)
 
 ### Rank probabilities
 
+We can also generate the posterior rank probabilities for each treatment, which are the probabilities of each treatment being ranked first, second, third, etc. The plot below shows the rank probabilities for each treatment accounting for the MID. Note that with an MID, it is possible for their to be ties between treatments. In Curteis et al. (2025), the authors recommend using the "midpoint" method for handling ties, which is the default in `posterior_rank_probs_mid()`.[@curteis2025ranking] We therefore see treatments having positive probabilities of being placed in a rank of, for example, 1.5, which is not possible without an MID.
+
+
 ```{r rank-probs}
-rank_probs_mid <- posterior_rank_probs_mid(diabetes_fit_FE, mid = mid)
+rank_probs <- posterior_rank_probs(diabetes_fit_RE) #without mid
+rank_probs_mid <- posterior_rank_probs_mid(diabetes_fit_RE, mid = mid) #with mid
 rank_probs_mid
 plot(rank_probs_mid)
 ```
 
 ### Cumulative rank probabilities
 
+The cumulative probability of being ranked in a certain position or better can also be generated, again accounting for an MID.
+
 ```{r rank-probs-cum}
 rank_probs_cum_mid <- posterior_rank_probs_mid(
-  diabetes_fit_FE,
+  diabetes_fit_RE,
   cumulative = TRUE,
   mid = mid
 )
 plot(rank_probs_cum_mid)
 ```
 
-## Handling ties
 
-When treatments are not separated by an MID they share a rank. The
-`method` argument controls how tied treatments are ranked:
+### MID-Adjusted SUCRAs
 
--   `"midpoint"` (default, recommended): tied treatments receive the
-    average of the ranks they span, consistent with Curteis et al.
-    (2025).
--   `"min"`: tied treatments receive the best (lowest) rank in the tie.
--   `"max"`: tied treatments receive the worst (highest) rank in the
-    tie.
+The purpose of using the "midpoint" method to handling ties is that this retains the desirable property that the average SUCRA value in a network is 0.5. The below table collates median ranks, MID-SUCRAs and P Best with and without an MID. The final column displays the probability of being best or equal best (i.e. within an MID of the best treatment) for each treatment.
 
-```{r methods}
-rank_min <- posterior_ranks_mid(diabetes_fit_FE, mid = mid, method = "min")
-rank_max <- posterior_ranks_mid(diabetes_fit_FE, mid = mid, method = "max")
+```{r rank-table}
+# round numbers to specified number of digits
+digits <- function(x, dig = 1, adj = 0) {
+  sprintf(paste0("%." , dig, "f"), as.numeric(x)+adj)
+}
+
+#Estimate the probability of being best or equal best (i.e. within an MID of the best treatment) for each treatment
+p_mid_best <- rank_probs_mid$summary$p_best_or_equal
+
+#Generate a table displaying useful ranking information for each treatment, including median rank, SUCRA, and probability of being best (with and without MID)
+rank_table <- cbind(rank_0$summary$`50%`,
+                    rank_mid$summary$`50%`,
+                    digits(rank_0$summary$sucra, 2),
+                    digits(rank_mid$summary$sucra, 2),
+                    digits(rank_probs$summary$`p_rank[1]`,2),
+                    digits(rank_probs_mid$summary$`p_rank[1]`,2),
+                    digits(p_mid_best,2))
+rank_table <- as.data.frame(rank_table)
+colnames(rank_table) <- c("Median Rank", "MID-Median Rank",
+                          "SUCRA", "MID-SUCRA",
+                          "P Best", "P MID Best", "P MID Equal Best")
+rownames(rank_table) <- rank_0$summary$.trt
+rank_table
 ```
 
-## References
-
-Curteis T, et al. (2025). Ranking of treatments in network
-meta-analysis: incorporating minimally important differences. *BMC
-Medical Research Methodology*.
-
-Senn S, Gavini F, Magrez D, Scheen A. Issues in performing a network meta-analysis. Statistical Methods in Medical Research. 2013 Apr;22(2):169-89.
+### References

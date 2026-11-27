@@ -486,9 +486,9 @@ posterior_ranks_mid <- function(x,
   return(out)
 }
 
-####posterior rank probs function ####
+#### Posterior rank probabilities function ####
 
-#' Posterior rank probabilities
+#' Posterior probabilities
 #'
 #' Produce posterior treatment probabilities (cumulative or non-cumulative) from a fitted NMA or ML-NMR
 #' model. Specify a minimally important difference (MID) specific to the outcome

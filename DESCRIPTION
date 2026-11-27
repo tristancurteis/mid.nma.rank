@@ -1,7 +1,7 @@
 Package: mid.nma.rank
 Type: Package
 Title: NMA Ranking Statistics Adjusting for Minimally Important Differences
-Version: 0.1.0
+Version: 0.2.0
 Author: person("Tristan", "Curteis", email = "tristan.curteis@costellomedical.com",
   role = c("aut", "cre"))
 Maintainer: The package maintainer <tristan.curteis@costellomedical.com>
